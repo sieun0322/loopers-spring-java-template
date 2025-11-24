@@ -1,8 +1,11 @@
 package com.loopers.application.product;
 
 import com.loopers.application.like.LikeInfo;
+import com.loopers.domain.brand.Brand;
+import com.loopers.domain.brand.BrandService;
 import com.loopers.domain.like.LikeService;
 import com.loopers.domain.like.ProductIdAndLikeCount;
+import com.loopers.domain.order.Money;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductService;
 import com.loopers.domain.stock.Stock;
@@ -20,15 +23,16 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Component
 public class ProductFacade {
+  private final BrandService brandService;
   private final ProductService productService;
   private final StockService stockService;
   private final LikeService likeService;
 
   @Transactional(readOnly = true)
   public Page<ProductWithLikeCount> getProductList(Long brandId,
-                                      String sortType,
-                                      int page,
-                                      int size) {
+                                                   String sortType,
+                                                   int page,
+                                                   int size) {
     Page<Product> productPage = productService.getProducts(brandId, sortType, page, size);
     List<Product> products = productPage.getContent();
 
@@ -75,5 +79,21 @@ public class ProductFacade {
     LikeInfo likeInfo = LikeInfo.from(likeCount, isLiked);
     return ProductDetailInfo.from(product, stock, likeInfo);
   }
+
+  @Transactional
+  public ProductDetailInfo createProduct(Long brandId, String name, long priceAmount, long initialStock) {
+
+    Brand brand = brandService.getExistingBrand(brandId);
+
+    Product product = Product.create(brand, name, Money.wons(priceAmount));
+    Product saved = productService.save(product);
+
+    Stock stock = Stock.create(saved.getId(), initialStock);
+    stockService.save(stock);
+
+    LikeInfo likeInfo = LikeInfo.from(0L, false);
+    return ProductDetailInfo.from(saved, stock, likeInfo);
+  }
+
 
 }

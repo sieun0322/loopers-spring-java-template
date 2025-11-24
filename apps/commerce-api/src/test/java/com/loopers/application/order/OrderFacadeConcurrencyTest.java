@@ -74,7 +74,8 @@ class OrderFacadeConcurrencyTest {
         userService.join(UserFixture.createUserWithLoginId("user1")),
         userService.join(UserFixture.createUserWithLoginId("user2"))
     );
-
+    pointService.save(Point.create(savedUsers.get(0), BigDecimal.TEN));
+    pointService.save(Point.create(savedUsers.get(1), BigDecimal.TEN));
     // 브랜드 생성
     savedBrands = brandService.saveAll(List.of(
         BrandFixture.createBrand(),
@@ -167,7 +168,7 @@ class OrderFacadeConcurrencyTest {
   @Test
   void 동일유저_다른상품_동시주문_포인트차감() throws InterruptedException {
     Long userId = savedUsers.get(0).getId();
-    pointService.charge(savedUsers.get(0), new BigDecimal(30));
+    pointService.charge(savedUsers.get(0).getId(), new BigDecimal(30));
     // 주문 1: 상품1, 단가 1원
     Long productId1 = savedProducts.get(0).getId();
     CreateOrderCommand orderCommand1 = createOrderCommand(userId, productId1, 1);
