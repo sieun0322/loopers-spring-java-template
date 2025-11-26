@@ -124,7 +124,7 @@ class OrderFacadeConcurrencyTest {
 
     latch.await();
 
-    Stock stock = stockService.findByProductId(productId);
+    Stock stock = stockService.getStock(productId);
     assertThat(stock.getAvailable()).isZero();
   }
 
@@ -157,7 +157,7 @@ class OrderFacadeConcurrencyTest {
     // 재고 10개, 단가 4원 → 2개의 주문 성공, 나머지는 실패
     assertThat(errorCount.get()).isEqualTo(8);
 
-    Stock stock = stockService.findByProductId(productId);
+    Stock stock = stockService.getStock(productId);
     assertThat(stock.getAvailable()).isEqualTo(8);
 
     BigDecimal remainingPoint = pointService.getAmount(userId);
@@ -200,8 +200,8 @@ class OrderFacadeConcurrencyTest {
     latch.await();
 
     // 재고 검증
-    Stock stock1 = stockService.findByProductId(productId1);
-    Stock stock2 = stockService.findByProductId(productId2);
+    Stock stock1 = stockService.getStock(productId1);
+    Stock stock2 = stockService.getStock(productId2);
 
     assertThat(stock1.getAvailable()).isEqualTo(5); // 상품1
     assertThat(stock2.getAvailable()).isEqualTo(5); // 상품2ㄴ

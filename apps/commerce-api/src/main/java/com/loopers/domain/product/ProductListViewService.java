@@ -1,6 +1,7 @@
-
 package com.loopers.domain.product;
 
+import com.loopers.support.error.CoreException;
+import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -9,6 +10,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Optional;
+
 @RequiredArgsConstructor
 @Component
 public class ProductListViewService {
@@ -16,12 +19,7 @@ public class ProductListViewService {
   private final ProductListViewRepository productListViewRepository;
 
   @Transactional(readOnly = true)
-  public Page<ProductListView> getProducts(
-      Long brandId,
-      String sortType,
-      int page,
-      int size
-  ) {
+  public Page<ProductListView> getProducts(Long brandId, String sortType, int page, int size) {
     Sort sort = this.getSortBySortType(sortType);
     Pageable pageable = PageRequest.of(page, size, sort);
     Page<ProductListView> products = null;
@@ -31,6 +29,23 @@ public class ProductListViewService {
       products = productListViewRepository.findAll(pageable);
     }
     return products;
+  }
+
+  @Transactional(readOnly = true)
+  public ProductListView getExistingProductListView(Long id) {
+    if (id == null) {
+      throw new CoreException(ErrorType.BAD_REQUEST, "ID가 없습니다.");
+    }
+    Optional<ProductListView> product = productListViewRepository.getProductListView(id);
+    if (product.isEmpty()) {
+      throw new CoreException(ErrorType.NOT_FOUND, "상품을 찾을 수 없습니다.");
+    }
+    return product.get();
+  }
+
+  @Transactional
+  public ProductListView save(ProductListView productListView) {
+    return productListViewRepository.save(productListView);
   }
 
   private Sort getSortBySortType(String sortType) {

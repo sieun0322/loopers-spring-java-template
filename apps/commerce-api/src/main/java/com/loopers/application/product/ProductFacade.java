@@ -3,11 +3,10 @@ package com.loopers.application.product;
 import com.loopers.application.like.LikeInfo;
 import com.loopers.domain.brand.Brand;
 import com.loopers.domain.brand.BrandService;
+import com.loopers.domain.like.LikeCacheService;
 import com.loopers.domain.like.LikeService;
 import com.loopers.domain.order.Money;
-import com.loopers.domain.product.Product;
-import com.loopers.domain.product.ProductCacheService;
-import com.loopers.domain.product.ProductService;
+import com.loopers.domain.product.*;
 import com.loopers.domain.stock.Stock;
 import com.loopers.domain.stock.StockService;
 import lombok.RequiredArgsConstructor;
@@ -20,7 +19,9 @@ import org.springframework.transaction.annotation.Transactional;
 public class ProductFacade {
   private final BrandService brandService;
   private final ProductService productService;
+  private final ProductListViewService productListViewService;
   private final ProductCacheService productCacheService;
+  private final LikeCacheService likeCacheService;
   private final StockService stockService;
   private final LikeService likeService;
 
@@ -34,13 +35,9 @@ public class ProductFacade {
 
   @Transactional(readOnly = true)
   public ProductDetailInfo getProductDetail(long userId, long productId) {
-    Product product = productService.getExistingProduct(productId);
-    Stock stock = stockService.findByProductId(productId);
-    long likeCount = likeService.getLikeCount(productId);
-    boolean isLiked = likeService.isLiked(userId, productId);
-
-    LikeInfo likeInfo = LikeInfo.from(likeCount, isLiked);
-    return ProductDetailInfo.from(product, stock, likeInfo);
+    ProductStock productStock = productCacheService.getProduct(productId);
+    LikeInfo likeInfo = likeCacheService.getLikeInfo(userId, productId);
+    return ProductDetailInfo.from(productStock, likeInfo);
   }
 
   @Transactional
@@ -49,13 +46,17 @@ public class ProductFacade {
     Brand brand = brandService.getExistingBrand(brandId);
 
     Product product = Product.create(brand, name, Money.wons(priceAmount));
-    Product saved = productService.save(product);
+    Product savedProduct = productService.save(product);
 
-    Stock stock = Stock.create(saved.getId(), initialStock);
-    stockService.save(stock);
+    Stock stock = Stock.create(savedProduct.getId(), initialStock);
+    Stock savedStock = stockService.save(stock);
 
+    //목록 뷰 동기화
+    productListViewService.save(ProductListView.create(savedProduct, savedStock));
+
+    ProductStock productStock = ProductStock.from(savedProduct, savedStock);
     LikeInfo likeInfo = LikeInfo.from(0L, false);
-    return ProductDetailInfo.from(saved, stock, likeInfo);
+    return ProductDetailInfo.from(productStock, likeInfo);
   }
 
 

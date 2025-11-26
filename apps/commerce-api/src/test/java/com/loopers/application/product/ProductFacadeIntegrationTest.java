@@ -6,14 +6,14 @@ import com.loopers.domain.brand.BrandRepository;
 import com.loopers.domain.like.LikeRepository;
 import com.loopers.domain.point.Point;
 import com.loopers.domain.point.PointRepository;
-import com.loopers.domain.product.Product;
-import com.loopers.domain.product.ProductFixture;
-import com.loopers.domain.product.ProductRepository;
+import com.loopers.domain.product.*;
+import com.loopers.domain.stock.Stock;
 import com.loopers.domain.user.User;
 import com.loopers.domain.user.UserFixture;
 import com.loopers.domain.user.UserRepository;
 import com.loopers.support.error.CoreException;
 import com.loopers.utils.DatabaseCleanUp;
+import com.loopers.utils.RedisCleanUp;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -42,10 +42,14 @@ class ProductFacadeIntegrationTest {
   @Autowired
   private ProductRepository productRepository;
   @Autowired
+  private ProductListViewRepository productListViewRepository;
+
+  @Autowired
   private LikeRepository likeRepository;
   @Autowired
   private DatabaseCleanUp databaseCleanUp;
-
+  @Autowired
+  private RedisCleanUp redisCleanUp;
   User savedUser;
   List<Product> savedProducts;
 
@@ -61,6 +65,12 @@ class ProductFacadeIntegrationTest {
         , ProductFixture.createProduct(savedBrands.get(0))
         , ProductFixture.createProduct(savedBrands.get(1)));
     savedProducts = productRepository.saveAll(productList);
+    List<ProductListView> productListView = List.of(
+        ProductListView.create(savedProducts.get(0), Stock.create(savedProducts.get(0).getId(), 0)),
+        ProductListView.create(savedProducts.get(1), Stock.create(savedProducts.get(1).getId(), 0)),
+        ProductListView.create(savedProducts.get(2), Stock.create(savedProducts.get(2).getId(), 0)));
+    productListViewRepository.saveAll(productListView);
+    redisCleanUp.truncateAll();
   }
 
   @AfterEach
@@ -83,7 +93,7 @@ class ProductFacadeIntegrationTest {
       // assert
       assertThat(products).isNotEmpty().hasSize(3);
       assertThat(products.get(2).name()).isEqualTo(savedProducts.get(0).getName());
-      assertThat(products.get(2).likeCount()).isEqualTo(1);
+      assertThat(products.get(2).likeCount()).isEqualTo(0);
     }
 
     @DisplayName("브랜드ID 검색조건 포함시, 해당 브랜드의 상품 목록이 조회된다.")

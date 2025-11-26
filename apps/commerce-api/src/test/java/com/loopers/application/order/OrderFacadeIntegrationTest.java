@@ -172,7 +172,7 @@ class OrderFacadeIntegrationTest {
       // act
       // assert
       assertThrows(CoreException.class, () -> sut.createOrder(orderCommand)).getErrorType().equals(ErrorType.INSUFFICIENT_STOCK);
-      Stock deductedStock = stockService.findByProductId(productId);
+      Stock deductedStock = stockService.getStock(productId);
       assertThat(deductedStock.getAvailable()).isEqualTo(10);
     }
 
@@ -190,7 +190,7 @@ class OrderFacadeIntegrationTest {
       CoreException actualException = assertThrows(CoreException.class,
           () -> sut.createOrder(orderCommand));
       assertThat(actualException.getErrorType()).isEqualTo(ErrorType.INSUFFICIENT_POINT);
-      Stock deductedStock = stockService.findByProductId(productId);
+      Stock deductedStock = stockService.getStock(productId);
       assertThat(deductedStock.getAvailable()).isEqualTo(10);
     }
   }

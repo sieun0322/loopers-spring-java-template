@@ -4,9 +4,14 @@ package com.loopers.domain.product;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.loopers.application.product.ProductStock;
 import com.loopers.application.product.ProductWithLikeCount;
+import com.loopers.domain.stock.Stock;
+import com.loopers.domain.stock.StockService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
@@ -18,11 +23,14 @@ import java.util.Set;
 @Component
 public class ProductCacheService {
   private final ProductListViewService productListViewService;
+  private final ProductService productService;
+  private final StockService stockService;
   private final RedisTemplate<String, String> redisTemplate;
   private final ObjectMapper objectMapper; // Jackson ObjectMapper
 
 
   private static final String CACHE_KEY_PREFIX = "product:list:"; // 페이징 단위 캐싱
+  private static final Duration DETAIL_TTL = Duration.ofMinutes(10);
 
   public Page<ProductWithLikeCount> getProducts(Long brandId,
                                                 String sort,
@@ -58,6 +66,37 @@ public class ProductCacheService {
       e.printStackTrace();
     }
     return new PageImpl<>(list, productPage.getPageable(), productPage.getTotalElements());
+  }
+
+  public ProductStock getProduct(long productId) {
+    String key = "product:detail:" + productId;
+    ProductStock cached = getFromCache(key, ProductStock.class);
+    if (cached != null) return cached;
+
+    Product product = productService.getProduct(productId);
+    Stock stock = stockService.getStock(productId);
+    ProductStock productStock = ProductStock.from(product, stock);
+    putToCache(key, productStock, DETAIL_TTL);
+    return productStock;
+  }
+
+  private <T> T getFromCache(String key, Class<T> clazz) {
+    String json = redisTemplate.opsForValue().get(key);
+    if (json == null) return null;
+    try {
+      return objectMapper.readValue(json, clazz);
+    } catch (JsonProcessingException e) {
+      e.printStackTrace();
+      return null;
+    }
+  }
+
+  private void putToCache(String key, Object value, Duration ttl) {
+    try {
+      redisTemplate.opsForValue().set(key, objectMapper.writeValueAsString(value), ttl);
+    } catch (JsonProcessingException e) {
+      e.printStackTrace();
+    }
   }
 
   public void evictCache() {
