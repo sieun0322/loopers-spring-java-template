@@ -14,7 +14,7 @@ public class Product extends BaseEntity {
   private String name;
 
   @ManyToOne(fetch = FetchType.LAZY) // 지연 로딩 설정 (성능상 권장)
-  @JoinColumn(name = "ref_brand_Id")
+  @JoinColumn(name = "ref_brand_Id", foreignKey = @ForeignKey(value = ConstraintMode.NO_CONSTRAINT))
   private Brand brand;
 
   private Money price;

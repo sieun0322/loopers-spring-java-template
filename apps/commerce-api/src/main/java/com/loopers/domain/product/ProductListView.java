@@ -9,10 +9,14 @@ import java.math.BigDecimal;
 
 @Entity
 @Immutable
-@Table(name = "product_list_view")
+@Table(name = "product_list_view",
+    indexes = {
+        @Index(name = "idx_brand_like", columnList = "brand_id, like_count DESC")
+    })
 @Getter
 public class ProductListView extends BaseEntity {
 
+  @Column(name = "product_id", nullable = false, unique = true)
   private Long productId;
   private Long brandId;
   private String name;

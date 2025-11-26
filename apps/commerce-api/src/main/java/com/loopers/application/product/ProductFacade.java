@@ -29,7 +29,7 @@ public class ProductFacade {
                                                    String sortType,
                                                    int page,
                                                    int size) {
-    return productCacheService.getProducts(brandId, sortType,page,size);
+    return productCacheService.getProducts(brandId, sortType, page, size);
   }
 
   @Transactional(readOnly = true)

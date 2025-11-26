@@ -14,7 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
 @Transactional
-@Sql(scripts = "/product-list-data.sql")
+@Sql(scripts = "/product-list-data-ranged.sql")
 class ProductListIntegrationTest {
 
   @Autowired
@@ -27,7 +27,7 @@ class ProductListIntegrationTest {
   void testQueryPerformance() {
     long start = System.currentTimeMillis();
     Page<ProductWithLikeCount> page =
-        productCacheService.getProducts(null, "likeCount,desc", 0, 20);
+        productCacheService.getProducts(null, "likes_desc", 0, 20);
     long end = System.currentTimeMillis();
 
     System.out.println("Elapsed: " + (end - start) + " ms");
@@ -39,10 +39,10 @@ class ProductListIntegrationTest {
   @Test
   void testCacheHitPerformance() {
     // warm-up
-    productCacheService.getProducts(null, "likeCount,desc", 0, 20);
+    productCacheService.getProducts(null, "likes_desc", 0, 20);
 
     long start = System.currentTimeMillis();
-    productCacheService.getProducts(null, "likeCount,desc", 0, 20);
+    productCacheService.getProducts(null, "likes_desc", 0, 20);
     long end = System.currentTimeMillis();
 
     System.out.println("Cache Hit: " + (end - start) + " ms");
