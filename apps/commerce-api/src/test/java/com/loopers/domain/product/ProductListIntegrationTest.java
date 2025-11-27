@@ -1,5 +1,6 @@
 package com.loopers.domain.product;
 
+import com.loopers.application.product.ProductCacheService;
 import com.loopers.application.product.ProductWithLikeCount;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
@@ -27,7 +28,7 @@ class ProductListIntegrationTest {
   void testQueryPerformance() {
     long start = System.currentTimeMillis();
     Page<ProductWithLikeCount> page =
-        productCacheService.getProducts(null, "likes_desc", 0, 20);
+        productCacheService.getProductList(null, null, "likes_desc", 0, 20);
     long end = System.currentTimeMillis();
 
     System.out.println("Elapsed: " + (end - start) + " ms");
@@ -38,11 +39,10 @@ class ProductListIntegrationTest {
 
   @Test
   void testCacheHitPerformance() {
-    // warm-up
-    productCacheService.getProducts(null, "likes_desc", 0, 20);
+    productCacheService.getProductList(null, null, "likes_desc", 0, 20);
 
     long start = System.currentTimeMillis();
-    productCacheService.getProducts(null, "likes_desc", 0, 20);
+    productCacheService.getProductList(null, null, "likes_desc", 0, 20);
     long end = System.currentTimeMillis();
 
     System.out.println("Cache Hit: " + (end - start) + " ms");

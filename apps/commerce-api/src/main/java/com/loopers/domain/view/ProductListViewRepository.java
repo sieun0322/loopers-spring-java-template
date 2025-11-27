@@ -1,5 +1,6 @@
-package com.loopers.domain.product;
+package com.loopers.domain.view;
 
+import com.loopers.domain.view.ProductListView;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 

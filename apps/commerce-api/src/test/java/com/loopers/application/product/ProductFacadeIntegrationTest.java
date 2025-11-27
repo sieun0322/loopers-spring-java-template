@@ -11,6 +11,8 @@ import com.loopers.domain.stock.Stock;
 import com.loopers.domain.user.User;
 import com.loopers.domain.user.UserFixture;
 import com.loopers.domain.user.UserRepository;
+import com.loopers.domain.view.ProductListView;
+import com.loopers.domain.view.ProductListViewRepository;
 import com.loopers.support.error.CoreException;
 import com.loopers.utils.DatabaseCleanUp;
 import com.loopers.utils.RedisCleanUp;
@@ -23,7 +25,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.List;
 
-import static com.loopers.domain.product.ProductAssertions.assertProduct;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -85,10 +86,11 @@ class ProductFacadeIntegrationTest {
     @Test
     void 성공_상품목록조회() {
       // arrange
+      Long userId = savedUser.getId();
       Long brandId = null;
       likeRepository.save(savedUser.getId(), savedProducts.get(0).getId());
       // act
-      Page<ProductWithLikeCount> productsPage = sut.getProductList(brandId, "latest", 0, 20);
+      Page<ProductWithLikeCount> productsPage = sut.getProductList(userId, brandId, "latest", 0, 20);
       List<ProductWithLikeCount> products = productsPage.getContent();
       // assert
       assertThat(products).isNotEmpty().hasSize(3);
@@ -100,9 +102,10 @@ class ProductFacadeIntegrationTest {
     @Test
     void 성공_상품목록조회_브랜드ID() {
       // arrange
+      Long userId = savedUser.getId();
       Long brandId = savedProducts.get(0).getBrand().getId();
       // act
-      Page<ProductWithLikeCount> productsPage = sut.getProductList(brandId, null, 0, 20);
+      Page<ProductWithLikeCount> productsPage = sut.getProductList(userId, brandId, null, 0, 20);
       List<ProductWithLikeCount> resultList = productsPage.getContent();
 
       // assert

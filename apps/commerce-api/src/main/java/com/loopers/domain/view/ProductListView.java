@@ -1,6 +1,7 @@
-package com.loopers.domain.product;
+package com.loopers.domain.view;
 
 import com.loopers.domain.BaseEntity;
+import com.loopers.domain.product.Product;
 import com.loopers.domain.stock.Stock;
 import com.querydsl.core.annotations.Immutable;
 import jakarta.persistence.Column;

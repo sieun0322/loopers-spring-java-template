@@ -3,12 +3,13 @@ package com.loopers.application.product;
 import com.loopers.application.like.LikeInfo;
 import com.loopers.domain.brand.Brand;
 import com.loopers.domain.brand.BrandService;
-import com.loopers.domain.like.LikeCacheService;
-import com.loopers.domain.like.LikeService;
 import com.loopers.domain.order.Money;
-import com.loopers.domain.product.*;
+import com.loopers.domain.product.Product;
+import com.loopers.domain.product.ProductService;
 import com.loopers.domain.stock.Stock;
 import com.loopers.domain.stock.StockService;
+import com.loopers.domain.view.ProductListView;
+import com.loopers.domain.view.ProductListViewService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
@@ -19,25 +20,22 @@ import org.springframework.transaction.annotation.Transactional;
 public class ProductFacade {
   private final BrandService brandService;
   private final ProductService productService;
+  private final ProductQueryService productQueryService;
   private final ProductListViewService productListViewService;
-  private final ProductCacheService productCacheService;
-  private final LikeCacheService likeCacheService;
   private final StockService stockService;
-  private final LikeService likeService;
 
   @Transactional(readOnly = true)
-  public Page<ProductWithLikeCount> getProductList(Long brandId,
+  public Page<ProductWithLikeCount> getProductList(long userId,
+                                                   Long brandId,
                                                    String sortType,
                                                    int page,
                                                    int size) {
-    return productCacheService.getProducts(brandId, sortType, page, size);
+    return productQueryService.getProductList(userId, brandId, sortType, page, size);
   }
 
   @Transactional(readOnly = true)
   public ProductDetailInfo getProductDetail(long userId, long productId) {
-    ProductStock productStock = productCacheService.getProduct(productId);
-    LikeInfo likeInfo = likeCacheService.getLikeInfo(userId, productId);
-    return ProductDetailInfo.from(productStock, likeInfo);
+    return productQueryService.getProductDetail(userId, productId);
   }
 
   @Transactional

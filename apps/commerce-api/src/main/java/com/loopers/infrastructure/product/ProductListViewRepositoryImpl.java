@@ -1,8 +1,7 @@
 package com.loopers.infrastructure.product;
 
-import com.loopers.domain.product.Product;
-import com.loopers.domain.product.ProductListView;
-import com.loopers.domain.product.ProductListViewRepository;
+import com.loopers.domain.view.ProductListView;
+import com.loopers.domain.view.ProductListViewRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
