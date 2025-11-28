@@ -31,6 +31,11 @@ public class ProductListViewRepositoryImpl implements ProductListViewRepository 
   }
 
   @Override
+  public List<ProductListView> getProductListViews(List<Long> id) {
+    return jpaRepository.findByProductIds(id);
+  }
+
+  @Override
   public ProductListView save(ProductListView productListView) {
     return jpaRepository.save(productListView);
   }

@@ -2,8 +2,6 @@ package com.loopers.application.product;
 
 import com.loopers.application.like.LikeCacheRepository;
 import com.loopers.application.like.LikeInfo;
-import com.loopers.application.product.ProductStock;
-import com.loopers.application.product.ProductWithLikeCount;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductService;
 import com.loopers.domain.stock.Stock;
@@ -37,26 +35,39 @@ public class ProductCacheService {
   public Page<ProductWithLikeCount> getProductList(Long userId, Long brandId,
                                                    String sort, int page, int size) {
     String key = LIST_KEY_PREFIX + brandId + ":" + sort + ":" + page + ":" + size;
+    Duration ttl = getListTtl(sort, page);
 
+    // 1) ID 리스트 조회
     List<Long> productIds = cacheRepository.getIdList(key);
-    Page<ProductListView> pageData = null;
-
     if (productIds == null) {
-      pageData = productListViewService.getProducts(brandId, sort, page, size);
-      productIds = pageData.getContent()
-          .stream().map(ProductListView::getProductId).toList();
-      cacheRepository.saveIdList(key, productIds, LIST_TTL);
+      Page<ProductListView> pageData = productListViewService.getProducts(brandId, sort, page, size);
+      productIds = pageData.getContent().stream().map(ProductListView::getProductId).toList();
+      cacheRepository.saveIdList(key, productIds, ttl);
     }
 
+    // 2) 상세 캐시 확인
+    List<Long> missIds = productIds.stream()
+        .filter(id -> cacheRepository.get(id) == null)
+        .toList();
+
+    if (!missIds.isEmpty()) {
+      List<ProductStock> stocks = missIds.stream().map(id -> this.getProductStock(id)).toList();
+      stocks.forEach(stock -> cacheRepository.save(stock, DETAIL_TTL));
+    }
+
+    // 3) 상세 캐시 조합 + 좋아요 조회
     List<ProductWithLikeCount> list = productIds.stream()
         .map(id -> {
-          ProductStock stock = getProductStock(id);
+          ProductStock stock = cacheRepository.get(id);
           LikeInfo like = likeCacheRepository.getLikeInfo(userId, id);
-          return new ProductWithLikeCount(id,
+          return new ProductWithLikeCount(
+              id,
               stock.product().getName(),
               stock.product().getPrice().getAmount(),
-              like.likeCount());
+              like.likeCount()
+          );
         }).toList();
+
     return new PageImpl<>(list, PageRequest.of(page, size), productIds.size());
   }
 
@@ -73,5 +84,18 @@ public class ProductCacheService {
 
   public void evictListCache() {
     cacheRepository.evictByPrefix(LIST_KEY_PREFIX);
+  }
+
+  private Duration getListTtl(String sort, int page) {
+    if ("latest".equals(sort)) {
+      if (page == 0) return Duration.ofMinutes(1);        // 첫 페이지
+      if (page >= 1 && page <= 4) return Duration.ofMinutes(2); // 2~5페이지
+      return Duration.ofMinutes(5);                       // 6페이지 이후
+    } else if ("likes_desc".equals(sort)) {
+      if (page == 0) return Duration.ofMinutes(1);  // 1페이지 최신 좋아요 반영
+      return Duration.ofMinutes(2);                 // 뒤 페이지
+    }
+    // 기본 TTL
+    return LIST_TTL;
   }
 }

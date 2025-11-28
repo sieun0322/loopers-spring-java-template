@@ -1,6 +1,5 @@
 package com.loopers.domain.view;
 
-import com.loopers.domain.view.ProductListView;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -13,6 +12,8 @@ public interface ProductListViewRepository {
   Page<ProductListView> findAll(Pageable pageable);
 
   Optional<ProductListView> getProductListView(Long productId);
+
+  List<ProductListView> getProductListViews(List<Long> productIds);
 
   ProductListView save(ProductListView productListView);
 

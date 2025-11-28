@@ -95,7 +95,7 @@ class ProductFacadeIntegrationTest {
       // assert
       assertThat(products).isNotEmpty().hasSize(3);
       assertThat(products.get(2).name()).isEqualTo(savedProducts.get(0).getName());
-      assertThat(products.get(2).likeCount()).isEqualTo(0);
+      assertThat(products.get(2).likeCount()).isEqualTo(1);
     }
 
     @DisplayName("브랜드ID 검색조건 포함시, 해당 브랜드의 상품 목록이 조회된다.")

@@ -1,26 +1,30 @@
 package com.loopers.application.like;
 
 import com.loopers.domain.like.LikeService;
-import com.loopers.domain.product.ProductService;
-import com.loopers.domain.user.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 @RequiredArgsConstructor
 @Component
 public class LikeFacade {
-  private final LikeService likeService;              // DB 기반
+  private final LikeService likeService;
   private final LikeCacheRepository likeCacheRepository;
 
   /**
    * 좋아요
    */
   public LikeInfo like(Long userId, Long productId) {
+    Boolean userLiked = likeCacheRepository.getUserLiked(userId, productId);
+    if (Boolean.TRUE.equals(userLiked)) {
+      Long count = likeCacheRepository.getLikeCount(productId);
+      count = (count == null ? 1 : count);
+      return LikeInfo.from(count, true);
+    }
     likeCacheRepository.putUserLiked(userId, productId, true);
-    Long cachedCount = likeCacheRepository.getLikeCount(productId);
-    cachedCount = cachedCount == null ? 0 : cachedCount;
+    Long newCount = likeCacheRepository.addLikeCount(productId);
     likeService.save(userId, productId);
-    return LikeInfo.from(cachedCount, true);
+
+    return LikeInfo.from(newCount, true);
   }
 
   /**
@@ -28,16 +32,14 @@ public class LikeFacade {
    */
   public LikeInfo unlike(Long userId, Long productId) {
     likeCacheRepository.evictUserLike(userId, productId);
-    Long cachedCount = likeCacheRepository.subtractLikeCount(productId);
-    cachedCount = cachedCount == null ? 0 : cachedCount;
-    likeService.remove(userId, productId);
 
+    Long cachedCount = likeCacheRepository.subtractLikeCount(productId);
+    cachedCount = (cachedCount == null ? 0 : cachedCount);
+
+    likeService.remove(userId, productId);
     return LikeInfo.from(cachedCount, false);
   }
 
-  /**
-   * 사용자별 & 상품별 좋아요 조회
-   */
   public LikeInfo getLikeInfo(Long userId, Long productId) {
     Boolean liked = likeCacheRepository.getUserLiked(userId, productId);
     if (liked == null) {

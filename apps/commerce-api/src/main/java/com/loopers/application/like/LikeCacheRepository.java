@@ -20,9 +20,6 @@ public class LikeCacheRepository {
   private static final Duration USER_LIKE_TTL = Duration.ofMinutes(10);
   private static final Duration LIKE_COUNT_TTL = Duration.ofMinutes(10);
 
-  /**
-   * 사용자별 좋아요 여부 조회
-   */
   public Boolean getUserLiked(Long userId, Long productId) {
     String key = "product:liked:" + userId + ":" + productId;
     return getFromCache(key, Boolean.class);
@@ -30,24 +27,9 @@ public class LikeCacheRepository {
 
   public void putUserLiked(Long userId, Long productId, boolean liked) {
     String key = "product:liked:" + userId + ":" + productId;
-    Boolean userLiked = getUserLiked(userId, productId);
-    if (userLiked != null) {
-      if (userLiked == true && liked == false) {
-        subtractLikeCount(productId);
-      } else if (userLiked == false && liked == true) {
-        addLikeCount(productId);
-      }
-    } else {
-      if (userLiked == null && liked == true) {
-        addLikeCount(productId);
-      }
-    }
     putToCache(key, liked, USER_LIKE_TTL);
   }
 
-  /**
-   * 상품별 좋아요 수 조회
-   */
   public Long getLikeCount(Long productId) {
     String key = "product:likeCount:" + productId;
     return getFromCache(key, Long.class);
@@ -59,22 +41,19 @@ public class LikeCacheRepository {
   }
 
   public Long addLikeCount(Long productId) {
-    Long currentCount = getLikeCount(productId);
-    Long newCount = currentCount == null ? 1 : currentCount + 1;
-    putLikeCount(productId, newCount);
-    return newCount;
+    Long current = getLikeCount(productId);
+    Long next = (current == null ? 1 : current + 1);
+    putLikeCount(productId, next);
+    return next;
   }
 
   public Long subtractLikeCount(Long productId) {
-    Long currentCount = getLikeCount(productId);
-    Long newCount = currentCount == null ? 0 : currentCount - 1;
-    putLikeCount(productId, newCount);
-    return newCount;
+    Long current = getLikeCount(productId);
+    Long next = (current == null ? 0 : Math.max(0, current - 1));
+    putLikeCount(productId, next);
+    return next;
   }
 
-  /**
-   * LikeInfo 단일 메서드 통합
-   */
   public LikeInfo getLikeInfo(Long userId, Long productId) {
     Boolean liked = false;
     if (userId != null) {
@@ -94,9 +73,6 @@ public class LikeCacheRepository {
     return LikeInfo.from(likeCount, liked);
   }
 
-  /**
-   * 공통 JSON 직렬화
-   */
   private <T> T getFromCache(String key, Class<T> clazz) {
     String json = redisTemplate.opsForValue().get(key);
     if (json == null) return null;

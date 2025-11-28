@@ -10,6 +10,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
 
 @RequiredArgsConstructor
@@ -32,7 +33,16 @@ public class ProductListViewService {
   }
 
   @Transactional(readOnly = true)
-  public ProductListView getExistingProductListView(Long id) {
+  public List<ProductListView> getByProductIds(List<Long> ids) {
+    if (ids == null || ids.isEmpty()) {
+      throw new CoreException(ErrorType.BAD_REQUEST, "조회할 ID 목록이 없습니다.");
+    }
+
+    return productListViewRepository.getProductListViews(ids);
+  }
+
+  @Transactional(readOnly = true)
+  public ProductListView getByProductId(Long id) {
     if (id == null) {
       throw new CoreException(ErrorType.BAD_REQUEST, "ID가 없습니다.");
     }
