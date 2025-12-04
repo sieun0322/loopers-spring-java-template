@@ -43,7 +43,7 @@ resilience4j:
   retry:
     instances:
       pgRetry:
-        max-attempts: 0
+        max-attempts: 2
         wait-duration: 1s
         retry-exceptions:
           - feign.RetryableException
